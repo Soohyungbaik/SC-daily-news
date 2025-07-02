@@ -69,10 +69,6 @@ if not os.path.exists(index_path):
     # index.html이 없으면 새로 생성
     with open(index_path, 'w', encoding='utf-8') as f:
         f.write("<html><head><meta charset='UTF-8'></head><body><h1>SC 뉴스 모음</h1><ul></ul></body></html>")
-- name: Commit and push HTML
-  run: |
-    git config user.name "github-actions"
-    git config user.email "actions@github.com"
     
     # 조건부 커밋
     if [ -f "index.html" ] || [ "$(ls daily_html 2>/dev/null)" ]; then
