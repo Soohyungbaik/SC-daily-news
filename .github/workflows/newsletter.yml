@@ -1,0 +1,36 @@
+name: Daily SC Newsletter
+
+on:
+  schedule:
+    - cron: '0 23 * * *'  # 매일 오전 8시 KST (UTC 23시)
+  workflow_dispatch:
+
+jobs:
+  run-newsletter:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Run newsletter generator
+      run: python crawler.py
+      env:
+        EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+        EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+
+    - name: Commit and push HTML
+      run: |
+        git config user.name "github-actions"
+        git config user.email "actions@github.com"
+        git add index.html daily_html/
+        git commit -m "📰 Add {date} newsletter"
+        git push
