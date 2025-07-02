@@ -34,3 +34,6 @@ jobs:
         git add index.html daily_html/
         git commit -m "📰 Add {date} newsletter" || echo "No changes to commit"
         git push
+else
+      echo "No new files to commit."
+    fi
