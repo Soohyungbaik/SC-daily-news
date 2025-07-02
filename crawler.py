@@ -70,11 +70,3 @@ if not os.path.exists(index_path):
     with open(index_path, 'w', encoding='utf-8') as f:
         f.write("<html><head><meta charset='UTF-8'></head><body><h1>SC 뉴스 모음</h1><ul></ul></body></html>")
     
-    # 조건부 커밋
-    if [ -f "index.html" ] || [ "$(ls daily_html 2>/dev/null)" ]; then
-      git add index.html daily_html || true
-      git commit -m "📰 Add daily newsletter" || echo "Nothing to commit"
-      git push
-    else
-      echo "No new files to commit."
-    fi
