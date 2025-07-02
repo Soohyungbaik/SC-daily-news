@@ -42,3 +42,4 @@ jobs:
           git push
         else
           echo "No new files to commit."
+        fi
