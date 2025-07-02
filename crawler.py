@@ -5,7 +5,7 @@ import os
 
 # 오늘 날짜 기준
 today = datetime.today().strftime('%Y-%m-%d')
-url = f"https://so247.github.io/JP-daily-news/{today}.html"
+url = f"https://baik1204.github.io/SC-daily-news/{today}.html"
 
 res = requests.get(url)
 if res.status_code == 404:
@@ -63,3 +63,22 @@ server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
 server.login(os.getenv("EMAIL_FROM"), os.getenv("EMAIL_PASSWORD"))
 server.send_message(msg)
 server.quit()
+index_path = "index.html"
+
+if not os.path.exists(index_path):
+    # index.html이 없으면 새로 생성
+    with open(index_path, 'w', encoding='utf-8') as f:
+        f.write("<html><head><meta charset='UTF-8'></head><body><h1>SC 뉴스 모음</h1><ul></ul></body></html>")
+- name: Commit and push HTML
+  run: |
+    git config user.name "github-actions"
+    git config user.email "actions@github.com"
+    
+    # 조건부 커밋
+    if [ -f "index.html" ] || [ "$(ls daily_html 2>/dev/null)" ]; then
+      git add index.html daily_html || true
+      git commit -m "📰 Add daily newsletter" || echo "Nothing to commit"
+      git push
+    else
+      echo "No new files to commit."
+    fi
