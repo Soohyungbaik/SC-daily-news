@@ -60,14 +60,26 @@ else:
 index_path = "index.html"
 if not os.path.exists(index_path):
     with open(index_path, 'w', encoding='utf-8') as f:
-        f.write("<html><head><meta charset='UTF-8'></head><body><h1>SC 뉴스 모음</h1><ul></ul></body></html>")
+        f.write(
+            "<html>\n"
+            "  <head>\n"
+            "    <meta charset='UTF-8'>\n"
+            "    <title>SC 뉴스 모음</title>\n"
+            "  </head>\n"
+            "  <body>\n"
+            "    <h1>SC 뉴스 모음</h1>\n"
+            "    <ul>\n"
+            "    </ul>\n"
+            "  </body>\n"
+            "</html>\n"
+        )
 
 with open(index_path, 'r', encoding='utf-8') as f:
     index_html = f.read()
 
-new_entry = f"<li><a href='daily_html/{today}.html'>{today}</a></li>\n"
-if new_entry not in index_html:
-    index_html = index_html.replace("</ul>", f"{new_entry}</ul>")
+new_entry_tag = f"<li><a href='daily_html/{today}.html'>{today}</a></li>"
+if new_entry_tag not in index_html:
+    index_html = index_html.replace("</ul>", f"{new_entry_tag}\n</ul>")
     with open(index_path, 'w', encoding='utf-8') as f:
         f.write(index_html)
 
