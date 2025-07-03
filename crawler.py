@@ -74,3 +74,25 @@ server.quit()
 
 print("✅ 뉴스레터 HTML 생성 및 이메일 발송 완료")
 
+from datetime import datetime
+
+# 오늘 날짜를 YYYY-MM-DD 형식으로 가져옴
+today = datetime.today().strftime("%Y-%m-%d")
+
+# index.html 파일을 생성 또는 덮어쓰기
+with open("index.html", "w", encoding="utf-8") as f:
+    f.write(f"""
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>SC 뉴스 모음</title>
+      </head>
+      <body>
+        <h1>SC 뉴스 모음</h1>
+        <ul>
+          <li><a href="daily_html/{today}.html">{today}</a></li>
+        </ul>
+      </body>
+    </html>
+    """)
+
