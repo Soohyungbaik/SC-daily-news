@@ -5,23 +5,20 @@ import os
 import smtplib
 from email.mime.text import MIMEText
 
-# 오늘 날짜
-today = '2025-06-30'
+# 날짜 설정
+today = datetime.today().strftime('%Y-%m-%d')
 
-# 소스 뉴스 페이지 주소
+# SC 뉴스 소스
 source_url = f"https://baik1204.github.io/SC-daily-news/{today}.html"
 res = requests.get(source_url)
 
 # daily_html 폴더 생성
 os.makedirs("daily_html", exist_ok=True)
 
-# 404인 경우: 뉴스 없음 처리
+# 뉴스 없음 처리
 if res.status_code == 404:
-    print("📭 오늘 뉴스가 아직 없어 빈 뉴스 파일을 생성합니다.")
-    empty_html = f"""
-    <html><head><meta charset='UTF-8'><title>{today} 뉴스 없음</title></head>
-    <body><h2>{today} 뉴스 없음</h2></body></html>
-    """
+    print("📭 SC 소스 없음. 뉴스 없음 처리.")
+    empty_html = f"<html><head><meta charset='UTF-8'><title>{today} 뉴스 없음</title></head><body><h2>{today} 뉴스 없음</h2></body></html>"
     with open(f"daily_html/{today}.html", 'w', encoding='utf-8') as f:
         f.write(empty_html)
     html_to_send = empty_html
@@ -48,11 +45,13 @@ else:
     for item in items:
         title = item.text
         url = item['href']
-        if (not keywords or any(k in title for k in keywords)) and \
-           (not media_list or any(m in url for m in media_list)):
+        keyword_match = any(k in title for k in keywords) if keywords else False
+        media_match = any(m in title or m in url for m in media_list) if media_list else False
+
+        if (not keywords and not media_list) or keyword_match or media_match:
             filtered.append((title, url))
 
-    # 이메일용 HTML 본문 구성 (썸네일 + 다크모드 대응)
+    # 이메일 본문 생성 (다크모드 없음)
     html = f"""
     <html>
     <head>
@@ -62,13 +61,6 @@ else:
           font-family: Arial, sans-serif;
           background-color: #fff;
           color: #000;
-        }}
-        @media (prefers-color-scheme: dark) {{
-          body {{
-            background-color: #121212;
-            color: #e0e0e0;
-          }}
-          a {{ color: #80cbc4; }}
         }}
         .item {{
           margin-bottom: 15px;
@@ -87,18 +79,13 @@ else:
     """
 
     if not filtered:
-        html += "<li>해당 키워드 및 매체 조건에 맞는 뉴스가 없습니다.</li>"
+        html += "<li>설정한 키워드나 매체에 해당하는 뉴스가 없습니다.</li>"
     else:
         for title, url in filtered:
-            # 간이 썸네일
             thumb = f"https://www.google.com/s2/favicons?domain={url}"
             html += f"<li class='item'><img src='{thumb}' class='thumbnail'/><a href='{url}'>{title}</a></li>"
 
-    html += """
-      </ul>
-    </body>
-    </html>
-    """
+    html += "</ul></body></html>"
 
     # 저장
     with open(f"daily_html/{today}.html", 'w', encoding='utf-8') as f:
@@ -106,47 +93,39 @@ else:
 
     html_to_send = html
 
-# ✅ index.html 갱신
-index_path = "index.html"
-if not os.path.exists(index_path):
-    with open(index_path, 'w', encoding='utf-8') as f:
-        f.write(
-            "<html>\n"
-            "  <head>\n"
-            "    <meta charset='UTF-8'>\n"
-            "    <title>SC 뉴스 모음</title>\n"
-            "  </head>\n"
-            "  <body>\n"
-            "    <h1>SC 뉴스 모음</h1>\n"
-            "    <ul>\n"
-            "    </ul>\n"
-            "  </body>\n"
-            "</html>\n"
-        )
+    # index.html 갱신
+    index_path = "index.html"
+    if not os.path.exists(index_path):
+        with open(index_path, 'w', encoding='utf-8') as f:
+            f.write(
+                "<html><head><meta charset='UTF-8'><title>SC 뉴스 모음</title></head>"
+                "<body><h1>SC 뉴스 모음</h1><ul></ul></body></html>"
+            )
 
-with open(index_path, 'r', encoding='utf-8') as f:
-    index_html = f.read()
+    with open(index_path, 'r', encoding='utf-8') as f:
+        index_html = f.read()
 
-new_entry_tag = f"<li><a href='daily_html/{today}.html'>{today}</a></li>"
-if new_entry_tag not in index_html:
-    index_html = index_html.replace("</ul>", f"{new_entry_tag}\n</ul>")
-    with open(index_path, 'w', encoding='utf-8') as f:
-        f.write(index_html)
+    new_entry = f"<li><a href='daily_html/{today}.html'>{today}</a></li>"
+    if new_entry not in index_html:
+        index_html = index_html.replace("</ul>", f"{new_entry}\n</ul>")
+        with open(index_path, 'w', encoding='utf-8') as f:
+            f.write(index_html)
 
-# ✅ 이메일 전송
-msg = MIMEText(html_to_send, 'html')
-msg['Subject'] = f"[SC 뉴스레터] {today}"
-msg['From'] = os.getenv("EMAIL_FROM")
-msg['To'] = os.getenv("EMAIL_TO")
+    # 이메일 전송
+    msg = MIMEText(html_to_send, 'html')
+    msg['Subject'] = f"[SC 뉴스레터] {today}"
+    msg['From'] = os.getenv("EMAIL_FROM")
+    msg['To'] = os.getenv("EMAIL_TO")
 
-try:
-    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-    server.login(os.getenv("EMAIL_FROM"), os.getenv("EMAIL_PASSWORD"))
-    server.send_message(msg)
-    server.quit()
-    print("✅ 뉴스레터 이메일 전송 완료")
-except Exception as e:
-    print("❌ 이메일 전송 실패:", e)
+    try:
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.login(os.getenv("EMAIL_FROM"), os.getenv("EMAIL_PASSWORD"))
+        server.send_message(msg)
+        server.quit()
+        print("✅ 뉴스레터 이메일 전송 완료")
+    except Exception as e:
+        print("❌ 이메일 전송 실패:", e)
 
-print("✅ 뉴스레터 HTML 생성 완료")
+    print("✅ 뉴스레터 HTML 생성 완료")
+
 
