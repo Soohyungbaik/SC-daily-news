@@ -90,8 +90,7 @@ msg['From'] = os.getenv("EMAIL_FROM")
 msg['To'] = os.getenv("EMAIL_TO")
 
 try:
-    server = smtplib.SMTP('smtp.office365.com', 587)  # ✅ 올바른 서버 & 포트
-    server.starttls()  # ✅ TLS handshake
+    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
     server.login(os.getenv("EMAIL_FROM"), os.getenv("EMAIL_PASSWORD"))
     server.send_message(msg)
     server.quit()
