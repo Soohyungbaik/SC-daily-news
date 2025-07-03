@@ -13,8 +13,13 @@ source_url = f"https://baik1204.github.io/SC-daily-news/{today}.html"
 res = requests.get(source_url)
 
 if res.status_code == 404:
-    print("📭 오늘 뉴스가 아직 올라오지 않았습니다.")
-    exit()
+    print("📭 오늘 뉴스가 아직 없어 빈 뉴스 파일을 생성합니다.")
+    os.makedirs("daily_html", exist_ok=True)
+    with open(f"daily_html/{today}.html", 'w', encoding='utf-8') as f:
+        f.write(f"<html><body><h2>{today} 뉴스 없음</h2></body></html>")
+    # index.html 갱신은 계속 진행
+else:
+    # 기존 뉴스 파싱 및 생성 로직 수행
 
 # 뉴스 파싱
 soup = BeautifulSoup(res.text, 'html.parser')
