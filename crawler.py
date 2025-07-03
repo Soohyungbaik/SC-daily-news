@@ -23,10 +23,10 @@ if res.status_code == 404:
     with open(f"daily_html/{today}.html", 'w', encoding='utf-8') as f:
         f.write(empty_html)
 
-    html_to_send = empty_html  # 이메일도 빈 내용으로 전송
+    html_to_send = empty_html
 
 else:
-    # 뉴스 HTML 파싱
+    # HTML 파싱
     soup = BeautifulSoup(res.text, 'html.parser')
     items = soup.select('li > a')
 
@@ -34,15 +34,23 @@ else:
     with open('keywords.txt', 'r', encoding='utf-8') as f:
         keywords = [line.strip() for line in f if line.strip()]
 
-    # 키워드 필터링
-    filtered = [item for item in items if any(k in item.text for k in keywords)]
+    # 매체 리스트 불러오기
+    with open('media_list.txt', 'r', encoding='utf-8') as f:
+        media_list = [line.strip() for line in f if line.strip()]
 
-    # 뉴스 HTML 구성
+    # 키워드 + 매체 필터링
+    filtered = [
+        item for item in items
+        if any(k in item.text for k in keywords)
+        and any(m in item.text or m in item['href'] for m in media_list)
+    ]
+
+    # HTML 구성
     html = f"<html><head><meta charset='UTF-8'><title>{today} 뉴스</title></head><body>"
-    html += f"<h2>{today} 키워드 뉴스</h2><ul>"
+    html += f"<h2>{today} 키워드 & 매체 뉴스</h2><ul>"
 
     if not filtered:
-        html += "<li>해당 키워드의 뉴스가 없습니다.</li>"
+        html += "<li>해당 키워드와 매체에 맞는 뉴스가 없습니다.</li>"
     else:
         for a in filtered:
             html += f"<li><a href='{a['href']}'>{a.text}</a></li>"
@@ -54,9 +62,9 @@ else:
     with open(f"daily_html/{today}.html", 'w', encoding='utf-8') as f:
         f.write(html)
 
-    html_to_send = html  # 이메일 전송용 본문
+    html_to_send = html
 
-# ✅ index.html 갱신
+# index.html 갱신
 index_path = "index.html"
 if not os.path.exists(index_path):
     with open(index_path, 'w', encoding='utf-8') as f:
@@ -83,7 +91,7 @@ if new_entry_tag not in index_html:
     with open(index_path, 'w', encoding='utf-8') as f:
         f.write(index_html)
 
-# ✅ 이메일 전송
+# 이메일 전송
 msg = MIMEText(html_to_send, 'html')
 msg['Subject'] = f"[SC 뉴스레터] {today}"
 msg['From'] = os.getenv("EMAIL_FROM")
@@ -99,4 +107,3 @@ except Exception as e:
     print("❌ 이메일 전송 실패:", e)
 
 print("✅ 뉴스레터 HTML 생성 완료")
-
