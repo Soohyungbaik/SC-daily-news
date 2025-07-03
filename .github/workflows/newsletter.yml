@@ -36,10 +36,16 @@ jobs:
         git config user.name "github-actions"
         git config user.email "actions@github.com"
 
-        if [ -f "index.html" ] || [ "$(ls daily_html 2>/dev/null)" ]; then
-          git add index.html daily_html
+        if [ -f "index.html" ] || [ "$(ls daily_html/*.html 2>/dev/null)" ]; then
+          git add index.html
+          git add daily_html/*.html || echo "❗ daily_html/*.html 없음"
           git commit -m "📰 Add daily newsletter for $(date +'%Y-%m-%d')" || echo "Nothing to commit"
+          
+          # 권한 있는 remote로 설정
+          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}
           git push
         else
           echo "No new files to commit."
         fi
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
